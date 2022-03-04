@@ -10,6 +10,7 @@
 LinkyHistTIC Linky(LINKY_RX, LINKY_TX);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
+char buffer[50];
 
 void setup() {
   Serial.begin(115200);
