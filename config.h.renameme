@@ -1,0 +1,21 @@
+// Only RX is used, but TX needs to be reserved
+#define LINKY_TX 14
+#define LINKY_RX 12
+
+// MQTT
+const char *mqttServer = "127.0.0.1";
+const char *mqttUser = "username";
+const char *mqttPassword = "password";
+const int mqttPort = 1883;
+const char *mqttTopicIndexConso = "energy/electricity_consumption_wh";
+const char *mqttTopicIntensiteInstantanee = "energy/electricity_instant_intensity_a";
+const char *mqttTopicPuissanceApparente = "energy/electricity_apparent_power_va";
+
+// Wi-Fi
+const char* ssid = "ssid";
+const char* password = "password";
+
+// OTA
+const char *otaPassword = "password";
+const char *otaHostname = "esp32-linky-mqtt";
+int otaPort = 3232;
