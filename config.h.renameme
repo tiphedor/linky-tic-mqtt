@@ -7,6 +7,7 @@ const char *mqttServer = "127.0.0.1";
 const char *mqttUser = "username";
 const char *mqttPassword = "password";
 const int mqttPort = 1883;
+const char *mqttClientName = "esp32-linky";
 const char *mqttTopicIndexConso = "energy/electricity_consumption_wh";
 const char *mqttTopicIntensiteInstantanee = "energy/electricity_instant_intensity_a";
 const char *mqttTopicPuissanceApparente = "energy/electricity_apparent_power_va";

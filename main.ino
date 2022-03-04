@@ -38,7 +38,7 @@ void setup() {
   // MQTT
   Serial.print("Connecting to MQTT");
   mqttClient.setServer(mqttServer, mqttPort);
-  if (mqttClient.connect("esp32-linky", mqttUser, mqttPassword)) {
+  if (mqttClient.connect(mqttClientName, mqttUser, mqttPassword)) {
     Serial.println(" Ok!");
   } else {
     Serial.print("MQTT failed, rc=");
