@@ -11,41 +11,27 @@ LinkyHistTIC Linky(LINKY_RX, LINKY_TX);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char buffer[50];
+bool hasNewBase = false, hasNewIInst = false, hasNewPapp = false;
+uint32_t base = 0;
+uint8_t iinst = 0;
+uint16_t papp = 0;
+int lastExec = millis();
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("Booting!");
-
   // WIFI
-  Serial.print("Connecting to Wi-Fi");
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
     delay(250);
-
     if (WiFi.status() == WL_CONNECT_FAILED) {
-      Serial.println(" WiFi Error!");
-      Serial.println("Rebooting...");
       delay(30000);
       ESP.restart();
     }
   }
-  Serial.println(" Ok!");
-
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   // MQTT
-  Serial.print("Connecting to MQTT");
   mqttClient.setServer(mqttServer, mqttPort);
-  if (mqttClient.connect(mqttClientName, mqttUser, mqttPassword)) {
-    Serial.println(" Ok!");
-  } else {
-    Serial.print("MQTT failed, rc=");
-    Serial.print(mqttClient.state());
-
-    Serial.println("Rebooting...");
+  if (!mqttClient.connect(mqttClientName, mqttUser, mqttPassword)) {
     delay(30000);
     ESP.restart();
   }
@@ -61,33 +47,17 @@ void setup() {
         type = "sketch";
       else // U_SPIFFS
         type = "filesystem";
-
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating " + type);
-    })
-    .onEnd([]() {
-      Serial.println("\nEnd");
-    })
-    .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    })
-    .onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
     });
   ArduinoOTA.begin();
-
   Linky.Init();
 }
 
-
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Wi-Fi lost - reboot !");
+    delay(30000);
+    ESP.restart();
+  }
+  if (!mqttClient.connected()) {
     delay(30000);
     ESP.restart();
   }
@@ -96,29 +66,42 @@ void loop() {
   Linky.Update();
   mqttClient.loop();
 
-  if (Linky.baseIsNew()) {
-    Serial.print("New value for base:");
-    Serial.println(Linky.base());
 
-    sprintf(buffer, "%d", Linky.base());
-    mqttClient.publish(mqttTopicIndexConso, buffer);
+  if (Linky.baseIsNew()) {
+    base = Linky.base();
+    hasNewBase = true;
   }
 
   if (Linky.iinstIsNew()) {
-    Serial.print("New value for Iinst:");
-    Serial.println(Linky.iinst());
-
-    sprintf(buffer, "%d", Linky.iinst());
-    mqttClient.publish(mqttTopicIntensiteInstantanee, buffer);
+    iinst = Linky.iinst();
+    hasNewIInst = true;
   }
 
   if (Linky.pappIsNew()) {
-    Serial.print("New value for Papp:");
-    Serial.println(Linky.papp());
-
-    sprintf(buffer, "%d", Linky.papp());
-    mqttClient.publish(mqttTopicPuissanceApparente, buffer);
+    papp = Linky.papp();
+    hasNewPapp = true;
   }
 
-  delay(25);
+  if (millis() - lastExec >= mqttRefreshRateMillis) {
+    // Executed every `mqttRefreshRateMillis`ms
+    lastExec = millis();
+
+    if (hasNewBase) {
+      sprintf(buffer, "%d", base);
+      mqttClient.publish(mqttTopicIndexConso, buffer);
+      hasNewBase = false;
+    }
+    if (hasNewIInst) {
+      sprintf(buffer, "%d", iinst);
+      mqttClient.publish(mqttTopicIntensiteInstantanee, buffer);
+      hasNewIInst = false;
+    }
+    if (hasNewPapp) {
+      sprintf(buffer, "%d", papp);
+      mqttClient.publish(mqttTopicPuissanceApparente, buffer);
+      hasNewPapp = false;
+    }
+  } else {
+    delay(10);
+  }
 }

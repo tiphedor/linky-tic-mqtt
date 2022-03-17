@@ -20,3 +20,6 @@ const char* password = "password";
 const char *otaPassword = "password";
 const char *otaHostname = "esp32-linky-mqtt";
 int otaPort = 3232;
+
+// Misc
+int mqttRefreshRateMillis = 1000;
